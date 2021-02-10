@@ -12,7 +12,7 @@ pkgs.stdenv.mkDerivation rec {
     sha256 = "1jwxb2jcsx5afaknp33dm5v0624khijn9rsspdzr1db36gbiqwl9";
   };
 
-  nativeBuildInputs = [ pkgs.pkg-config pkgs.makeWrapper ];
+  nativeBuildInputs = [ pkgs.pkg-config pkgs.makeWrapper pkgs.file ];
 
   buildPhase = ''
     make bin
@@ -23,9 +23,12 @@ pkgs.stdenv.mkDerivation rec {
     mkdir -p "$out/share/man"
     cp -r bin/* "$out/bin"
     cp -r "$src/toolkit-source/man/man1/" "$out/share/man/"
-  '';
 
-  postInstall = ''
-    wrapProgram "$out/bin/extract" --set HUMDRUM "$out"
+    # wrap all awk executables with HUMDRUM var
+    for f in "$out"/bin/*; do
+      if [[ -x "$f" ]] && file "$f" | grep -q 'ASCII text executable'; then
+        wrapProgram "$f" --set HUMDRUM "$out"
+      fi
+    done
   '';
 }
